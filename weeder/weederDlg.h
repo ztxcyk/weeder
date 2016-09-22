@@ -18,7 +18,7 @@
 #define VIDEORULE  L".avi;.wma;.rmvb;.rm;.flash;.mp4;.mid;.3gp" 
 #define MUSICRULE  L".cda;.wav;.mp3;.wma;.ra;.midi;.ogg;.ape;.flac;.aac"
 #define PICRULE    L".tiff;.psd;.png;.swf;.pcx;.wmf;.emf;.lic;.eps;.tga;.bmp;.jpeg;.jpg;.gif"
-#define VCRULE     L".pdb;.ncb;.suo;.obj;.htm;.idb;.bsr;.pch;.exp;.dep;.aps;.db"
+#define VCRULE     L".pdb;.ncb;.suo;.obj;.htm;.idb;.bsr;.pch;.exp;.dep;.aps;.db;.tlog"
 
 // CweederDlg 对话框
 class CweederDlg : public CDialogEx
@@ -73,7 +73,8 @@ public:
 	afx_msg void OnBnClickedReset();
 	afx_msg void OnBnClickedButton5();
 	// 清理函数
-	bool OnCleaner();
+	bool OnCleaner(const CString path);
+	static UINT  CleanerThread(LPVOID lParam);
 private:
 	// 用来保存规则的数组
 	CStringArray m_rules;
@@ -87,4 +88,5 @@ public:
 	afx_msg void OnBnClickedBtnstop();
 	// 清理的控件变量
 	CButton m_btnclear;
+	afx_msg void OnBnClickedBtnexit();
 };

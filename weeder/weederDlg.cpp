@@ -81,6 +81,7 @@ BEGIN_MESSAGE_MAP(CweederDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_RESET, &CweederDlg::OnBnClickedReset)
 	ON_BN_CLICKED(IDC_BUTTON5, &CweederDlg::OnBnClickedButton5)
 	ON_BN_CLICKED(IDC_BTNSTOP, &CweederDlg::OnBnClickedBtnstop)
+	ON_BN_CLICKED(IDC_BTNEXIT, &CweederDlg::OnBnClickedBtnexit)
 END_MESSAGE_MAP()
 
 
@@ -354,8 +355,6 @@ void CweederDlg::OnBnClickedReset()
 
 void CweederDlg::OnBnClickedButton5()
 {
-	m_btnclear.EnableWindow(FALSE);
-	m_btnclear.SetWindowTextW(L"清除中...");
 	CString str;
 	GetDlgItem(IDC_EDITRULE)->GetWindowTextW(str);
 	if (m_filepath.IsEmpty() || str.IsEmpty())
@@ -363,18 +362,16 @@ void CweederDlg::OnBnClickedButton5()
 		AfxMessageBox(L"请检查路径和规则是否填写正确！");
 	}
 	ParsingRule();
-	OnCleaner();
-	m_btnclear.SetWindowTextW(L"清除");
-	m_btnclear.EnableWindow(TRUE);
-	// TODO: 在此添加控件通知处理程序代码
-
+	g_isstop = FALSE;
+	CWinThread* pThread = AfxBeginThread(CweederDlg::CleanerThread, this);
+	CloseHandle(pThread->m_hThread);
 }
 
 
 // 清理函数
-bool CweederDlg::OnCleaner()
+bool CweederDlg::OnCleaner(const CString path)
 {
-	CString  findfile(m_filepath);
+	CString  findfile(path);
 	findfile += "*.*";
 	WIN32_FIND_DATA filedir;
 	HANDLE hfind = FindFirstFile(findfile, &filedir);
@@ -385,12 +382,13 @@ bool CweederDlg::OnCleaner()
 		CString sub;
 		if (filedir.cFileName[0] == '.')//忽略"." 和".."
 			continue;
-
 		//过滤目录
-		sub.Format(L"%s\\%s", m_filepath, filedir.cFileName);
+		sub.Format(L"%s%s", path, filedir.cFileName);
 		if (filedir.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
-			//FindAll(dlg, sub);
+			CString dirsub;
+			dirsub.Format(L"%s%s\\", path, filedir.cFileName);
+			OnCleaner(dirsub);
 			continue;
 		}
 		else
@@ -413,6 +411,18 @@ bool CweederDlg::OnCleaner()
 	return false;
 }
 
+UINT CweederDlg::CleanerThread(LPVOID lParam)
+{
+	CweederDlg* pthead = (CweederDlg*)lParam;
+	pthead->m_btnclear.EnableWindow(FALSE);
+	pthead->m_btnclear.SetWindowTextW(L"清除中...");
+
+	pthead->OnCleaner(pthead->m_filepath);
+
+	pthead->m_btnclear.SetWindowTextW(L"清除");
+	pthead->m_btnclear.EnableWindow(TRUE);
+	return 1;
+}
 
 // 用来解析规则
 bool CweederDlg::ParsingRule()
@@ -445,6 +455,12 @@ bool CweederDlg::ParsingRule()
 
 void CweederDlg::OnBnClickedBtnstop()
 {
-	// TODO: 在此添加控件通知处理程序代码
 	g_isstop = TRUE;
+}
+
+
+void CweederDlg::OnBnClickedBtnexit()
+{
+	OnBnClickedBtnstop();
+	CweederDlg::OnOK();
 }
