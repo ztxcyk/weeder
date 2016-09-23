@@ -429,10 +429,11 @@ bool CweederDlg::ParsingRule()
 {
 	CString rulestr;
 	const CString sep(";");
-	int len = m_editrule.LineLength();
-	m_editrule.GetLine(0, rulestr.GetBuffer(len), len);
-	rulestr.ReleaseBuffer(len);
-    
+	//int len = m_editrule.LineLength();//xcyk  这样只能获取到一行
+	//m_editrule.GetLine(0, rulestr.GetBuffer(len), len);
+	//rulestr.ReleaseBuffer(len);
+	//20160923 xcyk  可以获取m_editrule的全部文本
+	m_editrule.GetWindowTextW(rulestr);
 	rulestr.Trim();//去除里面的空格
 	if (rulestr.IsEmpty())
 		return FALSE;

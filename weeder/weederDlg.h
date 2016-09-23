@@ -14,7 +14,7 @@
 #define VCFILE     L"VCÀ¬»øÎÄ¼þ"
 
 #define TEMPRULE   L".tmp;._mp;.log;.gid;.chk;.old;.bak"
-#define TEXTRULE   L".txt;.pdf;.chm;.pdg;.wdl;.doc;.docx"
+#define TEXTRULE   L".txt;.pdf;.chm;.pdg;.wdl;.doc;.docx;.xml;.html;.c;.cpp;.h;.java;.class"
 #define VIDEORULE  L".avi;.wma;.rmvb;.rm;.flash;.mp4;.mid;.3gp" 
 #define MUSICRULE  L".cda;.wav;.mp3;.wma;.ra;.midi;.ogg;.ape;.flac;.aac"
 #define PICRULE    L".tiff;.psd;.png;.swf;.pcx;.wmf;.emf;.lic;.eps;.tga;.bmp;.jpeg;.jpg;.gif"
