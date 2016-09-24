@@ -68,6 +68,8 @@ void CweederDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT, m_btnedit);
 	DDX_Control(pDX, IDC_SAVE, m_saverule);
 	DDX_Control(pDX, IDC_BUTTON5, m_btnclear);
+	DDX_Control(pDX, IDC_CHECKHIDE, m_noclrhide);
+	DDX_Control(pDX, IDC_CHECKUSE, m_noclruse);
 }
 
 BEGIN_MESSAGE_MAP(CweederDlg, CDialogEx)
@@ -82,6 +84,7 @@ BEGIN_MESSAGE_MAP(CweederDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON5, &CweederDlg::OnBnClickedButton5)
 	ON_BN_CLICKED(IDC_BTNSTOP, &CweederDlg::OnBnClickedBtnstop)
 	ON_BN_CLICKED(IDC_BTNEXIT, &CweederDlg::OnBnClickedBtnexit)
+	ON_BN_CLICKED(IDC_ADDRULE, &CweederDlg::OnBnClickedAddrule)
 END_MESSAGE_MAP()
 
 
@@ -210,6 +213,8 @@ void CweederDlg::OnBnClickedBrowse()
 
 void CweederDlg::initstr()
 {
+	m_noclrhide.SetCheck(TRUE);
+	m_noclruse.SetCheck(TRUE);
 	initfiletype();
 }
 
@@ -284,6 +289,8 @@ void CweederDlg::OnCbnSelchangeTypelist()
 
 void CweederDlg::OnBnClickedSave()
 {
+	AfxMessageBox(L"该功能正在开发中......");
+		return;
 	if (m_rulefile)
 	{
 
@@ -307,7 +314,7 @@ void CweederDlg::OnBnClickedSave()
 		}
 		fp.Close();
 	}
-
+	return;
 	// TODO: 在此添加控件通知处理程序代码
 }
 
@@ -371,6 +378,8 @@ void CweederDlg::OnBnClickedButton5()
 // 清理函数
 bool CweederDlg::OnCleaner(const CString path)
 {
+	BOOL noclrhide = (m_noclrhide.GetCheck() != BST_CHECKED);//是否不清除隐藏文件
+	BOOL noclruse = (m_noclruse.GetCheck() != BST_CHECKED);//是否不清除占用文件
 	CString  findfile(path);
 	findfile += "*.*";
 	WIN32_FIND_DATA filedir;
@@ -381,6 +390,8 @@ bool CweederDlg::OnCleaner(const CString path)
 	{
 		CString sub;
 		if (filedir.cFileName[0] == '.')//忽略"." 和".."
+			continue;
+		if((filedir.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) && noclrhide)//过滤隐藏文件
 			continue;
 		//过滤目录
 		sub.Format(L"%s%s", path, filedir.cFileName);
@@ -403,7 +414,13 @@ bool CweederDlg::OnCleaner(const CString path)
 			for (int i = 0; i < m_rules.GetCount(); i++)
 			{
 				if (ext == m_rules.GetAt(i))
-					DeleteFile(sub);
+				{
+					if (!(DeleteFile(sub)) && !noclruse )
+					{
+						MoveFileEx(sub, NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+					}
+					continue;
+				}
 			}
 		}
 	} while (!g_isstop && FindNextFile(hfind, &filedir));
@@ -464,4 +481,11 @@ void CweederDlg::OnBnClickedBtnexit()
 {
 	OnBnClickedBtnstop();
 	CweederDlg::OnOK();
+}
+
+
+void CweederDlg::OnBnClickedAddrule()
+{
+	AfxMessageBox(L"该功能正在开发中");
+	// TODO: 在此添加控件通知处理程序代码
 }

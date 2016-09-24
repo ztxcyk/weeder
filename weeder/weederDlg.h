@@ -89,4 +89,7 @@ public:
 	// 清理的控件变量
 	CButton m_btnclear;
 	afx_msg void OnBnClickedBtnexit();
+	afx_msg void OnBnClickedAddrule();
+	CButton m_noclrhide;
+	CButton m_noclruse;
 };
