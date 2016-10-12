@@ -6,6 +6,7 @@
 #include "weeder.h"
 #include "weederDlg.h"
 #include "afxdialogex.h"
+#include <locale>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -19,12 +20,12 @@ class CAboutDlg : public CDialogEx
 public:
 	CAboutDlg();
 
-// 对话框数据
+	// 对话框数据
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ABOUTBOX };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
 // 实现
@@ -55,6 +56,7 @@ CweederDlg::CweederDlg(CWnd* pParent /*=NULL*/)
 	, m_rulefile(false)
 	, m_isedit(false)
 	, g_isstop(false)
+	, m_isrecover(false)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -182,9 +184,9 @@ void CweederDlg::OnBnClickedBrowse()
 	DirDialogInfo.iImage = 0;
 	DirDialogInfo.lParam = NULL;
 	DirDialogInfo.lpfn = NULL;
-	DirDialogInfo.lpszTitle= L">>除草者将清理您所选择的文件夹<<";
+	DirDialogInfo.lpszTitle = L">>除草者将清理您所选择的文件夹<<  ------------------------------(date:20161012;author: xcyk)-----";
 	DirDialogInfo.pidlRoot = NULL;
-	DirDialogInfo.ulFlags = BIF_RETURNONLYFSDIRS | BIF_RETURNFSANCESTORS ;
+	DirDialogInfo.ulFlags = BIF_RETURNONLYFSDIRS | BIF_RETURNFSANCESTORS;
 	DirDialogInfo.pszDisplayName = NULL;
 
 	InitCommonControls();
@@ -221,62 +223,47 @@ void CweederDlg::initstr()
 
 bool CweederDlg::initfiletype()
 {
-	CFile fp;
-	CFileException e;
-	if (!fp.Open(L"rules.dat", CFile::modeRead, &e))//是否有保存的规则文件
+	CStdioFile fp;
+	if (!fp.Open(L"rules.dat", CFile::modeRead))//是否有保存的规则文件
 	{
 		OnBnClickedReset();
 	}
 	else//有规则文件，则按照文件来
 	{
-		//m_rulefile = TRUE;
-		OnBnClickedReset();//测试用，之后删掉
-		
+		char* old_locale = _strdup(setlocale(LC_CTYPE, NULL));//unicode 乱码问题
+		setlocale(LC_CTYPE, "chs");// 设定
+		m_rulefile = TRUE;
+		CString buffer_tyep;//读取的类型
+		CString buffer_rule;//规则
+		CString tyepstr;//解析后的类型
+		BOOL noend = false;
+		do
+		{
+			noend = fp.ReadString(buffer_tyep);
+			noend = fp.ReadString(buffer_rule);
+			if (noend)
+			{
+				tyepstr = buffer_tyep.Mid(1, buffer_tyep.GetLength() - 2);
+				m_filetype.AddString(tyepstr);
+				m_rulearray.Add(buffer_rule);
+			}
+		} while (noend);
+		setlocale(LC_CTYPE, old_locale);
+		free(old_locale);// 还原区域设定
 	}
-
+	fp.Close();
+	m_filetype.SetCurSel(0);
+	m_editrule.SetWindowTextW(m_rulearray.GetAt(0));
 	return false;
 }
 
 
 bool CweederDlg::initrule()
 {
-	//获取选择的文件类型
-	CString filetype;
 	int nIndex = m_filetype.GetCurSel();
-	//m_filetype.GetLBText(nIndex, filetype);
+	m_editrule.SetWindowTextW(m_rulearray.GetAt(nIndex));
 
-	if (m_rulefile)//存在规则文件
-	{
-
-	}
-	else
-	{
-		switch (nIndex)
-		{
-		case 0:
-			m_editrule.SetWindowTextW(TEMPRULE);
-			break;
-		case 1:
-			m_editrule.SetWindowTextW(TEXTRULE);
-			break;
-		case 2:
-			m_editrule.SetWindowTextW(VIDEORULE);
-			break;
-		case 3:
-			m_editrule.SetWindowTextW(MUSICRULE);
-			break;
-		case 4:
-			m_editrule.SetWindowTextW(PICRULE);
-			break;
-		case 5:
-			m_editrule.SetWindowTextW(VCRULE);
-			break;
-		default:
-			break;
-		}
-	}
-
-	return false;
+	return true;
 }
 
 
@@ -289,31 +276,49 @@ void CweederDlg::OnCbnSelchangeTypelist()
 
 void CweederDlg::OnBnClickedSave()
 {
-	AfxMessageBox(L"该功能正在开发中......");
-		return;
+	CStdioFile fp;
+	CString rulestr, filetype, writerule;
+	m_filetype.GetWindowTextW(filetype);
+	m_editrule.GetWindowTextW(rulestr);
+	writerule.Format(L"[%s]\n%s\n", filetype, rulestr);
 	if (m_rulefile)
 	{
+		if (!fp.Open(L"rules.dat",CFile::modeWrite | CFile::modeNoTruncate))
+		{
+			AfxMessageBox(L"打开规则文件失败！");
+			return;
+		}
+		fp.SeekToEnd();
+		char* old_locale = _strdup(setlocale(LC_CTYPE, NULL));//unicode 乱码问题
+		setlocale(LC_CTYPE, "chs");// 设定
 
+		fp.WriteString(writerule);
+
+		setlocale(LC_CTYPE, old_locale);
+		free(old_locale);// 还原区域设定
 	}
-	else//如果不存规则文件，则将默认规则写入
+	else//如果不存规则文件
 	{
-		CFile fp;
 		if (!fp.Open(L"rules.dat", CFile::modeCreate | CFile::modeWrite))
 		{
 			AfxMessageBox(L"创建规则文件失败！");
 			return;
 		}
-		CString rulestr, filetype;
-		for (int index = 0; index < 5; ++index)
-		{
-	//		fp.SeekToEnd();
-			m_filetype.GetLBText(index, filetype);//调试 参数错误
-			//rulestr.Format(L"[%s]//r//n",filetype);
-			AfxMessageBox(filetype);
-		//	fp.Write((LPCTSTR)filetype, filetype.GetLength());
-		}
-		fp.Close();
+		m_rulefile = true;
+		fp.SeekToEnd();
+		char* old_locale = _strdup(setlocale(LC_CTYPE, NULL));//unicode 乱码问题
+		setlocale(LC_CTYPE, "chs");// 设定
+
+		fp.WriteString(writerule);
+
+		setlocale(LC_CTYPE, old_locale);
+		free(old_locale);// 还原区域设定
 	}
+	fp.Close();
+	AfxMessageBox(L"保存成功！");
+	int nIndex = m_filetype.GetCurSel();
+	m_rulearray.SetAt(nIndex,rulestr);
+	UpdateData(TRUE);
 	return;
 	// TODO: 在此添加控件通知处理程序代码
 }
@@ -342,15 +347,26 @@ void CweederDlg::OnBnClickedEdit()
 void CweederDlg::OnBnClickedReset()
 {
 	// TODO: 在此添加控件通知处理程序代码
+	m_isrecover = true;
+	m_rulearray.RemoveAll();
 	m_filetype.ResetContent();
+
 	m_filetype.AddString(TEMPFILE);
 	m_filetype.AddString(TEXTFILE);
 	m_filetype.AddString(VIDEOFILE);
 	m_filetype.AddString(MUSICFILE);
 	m_filetype.AddString(PICFILE);
 	m_filetype.AddString(VCFILE);
+
+	m_rulearray.Add(TEMPRULE);
+	m_rulearray.Add(TEXTRULE);
+	m_rulearray.Add(VIDEORULE);
+	m_rulearray.Add(MUSICRULE);
+	m_rulearray.Add(PICRULE);
+	m_rulearray.Add(VCRULE);
+
 	m_filetype.SetCurSel(0);
-	m_editrule.SetWindowTextW(TEMPRULE);
+	m_editrule.SetWindowTextW(m_rulearray.GetAt(0));
 
 	m_editrule.SetReadOnly(TRUE);//如果当前处于编辑规则状态，则退出
 	m_btnedit.SetWindowTextW(L"编辑当前规则");
@@ -367,11 +383,14 @@ void CweederDlg::OnBnClickedButton5()
 	if (m_filepath.IsEmpty() || str.IsEmpty())
 	{
 		AfxMessageBox(L"请检查路径和规则是否填写正确！");
+		return;
 	}
 	ParsingRule();
 	g_isstop = FALSE;
 	CWinThread* pThread = AfxBeginThread(CweederDlg::CleanerThread, this);
 	CloseHandle(pThread->m_hThread);
+	AfxMessageBox(L"删除完毕！");
+	return;
 }
 
 
@@ -391,7 +410,7 @@ bool CweederDlg::OnCleaner(const CString path)
 		CString sub;
 		if (filedir.cFileName[0] == '.')//忽略"." 和".."
 			continue;
-		if((filedir.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) && noclrhide)//过滤隐藏文件
+		if ((filedir.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) && noclrhide)//过滤隐藏文件
 			continue;
 		//过滤目录
 		sub.Format(L"%s%s", path, filedir.cFileName);
@@ -415,7 +434,7 @@ bool CweederDlg::OnCleaner(const CString path)
 			{
 				if (ext == m_rules.GetAt(i))
 				{
-					if (!(DeleteFile(sub)) && !noclruse )
+					if (!(DeleteFile(sub)) && !noclruse)
 					{
 						MoveFileEx(sub, NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
 					}
@@ -446,10 +465,7 @@ bool CweederDlg::ParsingRule()
 {
 	CString rulestr;
 	const CString sep(";");
-	//int len = m_editrule.LineLength();//xcyk  这样只能获取到一行
-	//m_editrule.GetLine(0, rulestr.GetBuffer(len), len);
-	//rulestr.ReleaseBuffer(len);
-	//20160923 xcyk  可以获取m_editrule的全部文本
+
 	m_editrule.GetWindowTextW(rulestr);
 	rulestr.Trim();//去除里面的空格
 	if (rulestr.IsEmpty())
@@ -486,6 +502,17 @@ void CweederDlg::OnBnClickedBtnexit()
 
 void CweederDlg::OnBnClickedAddrule()
 {
-	AfxMessageBox(L"该功能正在开发中");
-	// TODO: 在此添加控件通知处理程序代码
+	if (m_addnew.DoModal() == IDOK)
+	{
+		Addnewrule();
+	}
+	return;
+}
+
+
+void CweederDlg::Addnewrule()
+{
+	m_filetype.AddString(m_addnew.addruletype);
+	m_rulearray.Add(m_addnew.addrule);
+	UpdateData(TRUE);
 }

@@ -5,7 +5,7 @@
 #pragma once
 #include "afxwin.h"
 #include "afxcoll.h"
-
+#include "Addrule.h"
 #define TEMPFILE   L"临时文件"
 #define TEXTFILE   L"文本文件"
 #define VIDEOFILE  L"视频文件" 
@@ -18,7 +18,7 @@
 #define VIDEORULE  L".avi;.wma;.rmvb;.rm;.flash;.mp4;.mid;.3gp" 
 #define MUSICRULE  L".cda;.wav;.mp3;.wma;.ra;.midi;.ogg;.ape;.flac;.aac"
 #define PICRULE    L".tiff;.psd;.png;.swf;.pcx;.wmf;.emf;.lic;.eps;.tga;.bmp;.jpeg;.jpg;.gif"
-#define VCRULE     L".pdb;.ncb;.suo;.obj;.htm;.idb;.bsr;.pch;.exp;.dep;.aps;.db;.tlog"
+#define VCRULE     L".pdb;.ncb;.suo;.obj;.htm;.idb;.bsr;.pch;.exp;.dep;.aps;.db;.tlog;.res;.ipch;.ncb;.cod;.tlh;.tli"
 
 // CweederDlg 对话框
 class CweederDlg : public CDialogEx
@@ -70,6 +70,7 @@ private:
 	bool m_isedit;
 public:
 	CButton m_saverule;
+	Addrule m_addnew;
 	afx_msg void OnBnClickedReset();
 	afx_msg void OnBnClickedButton5();
 	// 清理函数
@@ -92,4 +93,11 @@ public:
 	afx_msg void OnBnClickedAddrule();
 	CButton m_noclrhide;
 	CButton m_noclruse;
+	// 保存规则文件
+	CStringArray m_rulearray;
+private:
+	// 是否恢复默认规则
+	bool m_isrecover;
+public:
+	void Addnewrule();
 };
